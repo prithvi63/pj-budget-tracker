@@ -853,10 +853,12 @@
 
             // Listen for changes from other device
             firebaseDB.ref(`pj-budget/${currentMonth}/expenses`).on('value', (snapshot) => {
+                console.log('📥 Received from Firebase:', snapshot.val());
                 if (snapshot.val()) {
                     localStorage.setItem('monthlyExpenses', JSON.stringify(snapshot.val()));
                     renderVariable();
                     updateStats();
+                    loadRecentExpenses();
                 }
             });
         }
@@ -865,9 +867,10 @@
             if (!firebaseDB) return;
 
             const expenses = JSON.parse(localStorage.getItem('monthlyExpenses') || '{}');
-            firebaseDB.ref(`pj-budget/${currentMonth}/expenses`).set(expenses).catch(e => {
-                console.log('Cloud sync skipped');
-            });
+            console.log('📤 Syncing to Firebase:', expenses);
+            firebaseDB.ref(`pj-budget/${currentMonth}/expenses`).set(expenses)
+                .then(() => console.log('✅ Sync successful'))
+                .catch(e => console.log('❌ Sync error:', e));
         }
 
         // Initialize
