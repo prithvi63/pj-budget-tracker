@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PJ Budget">
+    <title>PJ 0 Based Budgeting - Prithvi & Jo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --safe-green: #10b981;
+            --warning-yellow: #f59e0b;
+            --danger-red: #ef4444;
+            --dark-bg: #1f2937;
+            --card-bg: #374151;
+            --text-primary: #ffffff;
+            --text-secondary: #d1d5db;
+            --purple-primary: #667eea;
+            --purple-dark: #764ba2;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 10px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding-bottom: 30px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-dark) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        .header-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 12px;
+        }
+
+        .sync-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .sync-btn:active {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .monthly-summary {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .summary-label {
+            font-size: 10px;
+            opacity: 0.8;
+            margin-bottom: 3px;
+        }
+
+        .summary-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--card-bg);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--purple-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 15px 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .expense-item {
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .expense-info {
+            flex: 1;
+        }
+
+        .expense-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .expense-category {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .expense-amount {
+            text-align: right;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .edit-btn {
+            background: var(--purple-primary);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-btn:active {
+            background: var(--purple-dark);
+        }
+
+        .category-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--purple-primary);
+        }
+
+        .category-card.safe {
+            border-left-color: var(--safe-green);
+        }
+
+        .category-card.warning {
+            border-left-color: var(--warning-yellow);
+        }
+
+        .category-card.danger {
+            border-left-color: var(--danger-red);
+        }
+
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .category-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .budget-bar {
+            background: rgba(255,255,255,0.1);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .budget-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .budget-fill.safe {
+            background: var(--safe-green);
+        }
+
+        .budget-fill.warning {
+            background: var(--warning-yellow);
+        }
+
+        .budget-fill.danger {
+            background: var(--danger-red);
+        }
+
+        .budget-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .budget-amount {
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .status-safe {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--safe-green);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-yellow);
+        }
+
+        .status-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-red);
+        }
+
+        .add-expense-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-dark) 100%);
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+            z-index: 100;
+        }
+
+        .add-expense-btn:active {
+            transform: scale(0.95);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--dark-bg);
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            border-radius: 20px 20px 0 0;
+            padding: 25px;
+            animation: slideUp 0.3s ease;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--purple-primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--purple-primary) 0%, var(--purple-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+
+        .recent-expenses {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .expense-log-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 11px;
+        }
+
+        .expense-log-item:last-child {
+            border-bottom: none;
+        }
+
+        .income-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .income-input-full {
+            grid-column: 1 / -1;
+        }
+
+        .total-display {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid var(--purple-primary);
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+
+        .total-display.positive {
+            border-left-color: var(--safe-green);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .total-display.negative {
+            border-left-color: var(--danger-red);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .pie-chart-svg {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
+        }
+
+        .chart-legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+            font-size: 12px;
+            text-align: left;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 PJ 0 Based Budgeting</h1>
+            <div class="header-subtitle" id="currentMonthDisplay">Prithvi & Jo | July 2026</div>
+
+            <div class="monthly-summary">
+                <div class="summary-item">
+                    <div class="summary-label">Total Income</div>
+                    <div class="summary-value" id="totalIncomeDisplay">$12,050</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Total Expenses</div>
+                    <div class="summary-value" id="totalExpensesDisplay">$0</div>
+                </div>
+                <div class="summary-item" id="savingsDisplay">
+                    <div class="summary-label">Available</div>
+                    <div class="summary-value">$0</div>
+                </div>
+            </div>
+
+            <button class="sync-btn" onclick="syncData()">🔄 Sync with Partner</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: var(--card-bg); border-radius: 8px;">
+            <button onclick="previousMonth()" style="background: var(--purple-primary); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;">◀ Prev</button>
+            <div style="text-align: center;">
+                <select id="monthSelector" onchange="changeMonth()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;">
+                </select>
+            </div>
+            <button onclick="nextMonth()" style="background: var(--purple-primary); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;">Next ▶</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('summary')">📈 Summary</button>
+            <button class="tab-btn" onclick="switchTab('income')">💵 Income</button>
+            <button class="tab-btn" onclick="switchTab('fixed')">🏠 Fixed</button>
+            <button class="tab-btn" onclick="switchTab('variable')">📊 Variable</button>
+            <button class="tab-btn" onclick="switchTab('savings')">🏦 Savings</button>
+        </div>
+
+        <!-- INCOME TAB (mislabeled, contains income data) -->
+        <div id="income" class="tab-content">
+            <div class="section-title">Monthly Income</div>
+            <div class="expense-item">
+                <div class="expense-info">
+                    <div class="expense-name">Prithvi Employment</div>
+                    <div class="expense-category">Primary Income</div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div class="expense-amount">$7,000</div>
+                    <button class="edit-btn" onclick="editIncome('prithvi')">✏️</button>
+                </div>
+            </div>
+
+            <div class="expense-item">
+                <div class="expense-info">
+                    <div class="expense-name">Jo Employment</div>
+                    <div class="expense-category">Primary Income</div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div class="expense-amount">$5,000</div>
+                    <button class="edit-btn" onclick="editIncome('jo')">✏️</button>
+                </div>
+            </div>
+
+            <div class="expense-item">
+                <div class="expense-info">
+                    <div class="expense-name">Amway Business</div>
+                    <div class="expense-category">Side Hustle (Diamond Business)</div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div class="expense-amount" id="amwayIncomeDisplay">$50</div>
+                    <button class="edit-btn" onclick="editIncome('amway')">✏️</button>
+                </div>
+            </div>
+
+            <div class="total-display" id="totalIncomeCard">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>TOTAL INCOME</span>
+                    <span id="totalIncomeValue">$12,050</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FIXED EXPENSES TAB -->
+        <div id="fixed" class="tab-content">
+            <div class="section-title">🏠 Track Fixed Expenses (Actual vs Budget)</div>
+            <div id="fixedExpensesContainer"></div>
+            <div class="total-display" id="totalFixedCard">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>TOTAL FIXED SPENT (Month)</span>
+                    <span id="totalFixedValue">$0</span>
+                </div>
+            </div>
+
+            <button style="width: 100%; margin-top: 15px; padding: 10px; background: rgba(239, 68, 68, 0.1); color: var(--danger-red); border: 1px solid var(--danger-red); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;" onclick="resetFixedExpenses()">🔄 Reset Fixed Expenses (New Month)</button>
+        </div>
+
+        <!-- VARIABLE EXPENSES TAB -->
+        <div id="variable" class="tab-content">
+            <div class="section-title">🎯 Track Daily Spending</div>
+            <div id="variableCategoriesContainer"></div>
+            <div class="total-display" id="totalVariableCard">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>TOTAL VARIABLE SPENT</span>
+                    <span id="totalVariableValue">$0</span>
+                </div>
+            </div>
+
+            <div class="section-title" style="margin-top: 20px;">📝 Recent Transactions</div>
+            <div class="recent-expenses">
+                <div id="recentExpensesList" style="min-height: 40px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 11px;">
+                    No expenses logged yet
+                </div>
+            </div>
+        </div>
+
+        <!-- SAVINGS TAB -->
+        <div id="savings" class="tab-content">
+            <div class="section-title">💰 Monthly Savings & Investments (Track Actual vs Budget)</div>
+            <div id="savingsContainer"></div>
+            <div class="total-display positive" id="totalSavingsCard" style="margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>TOTAL INVESTMENTS (Budget)</span>
+                    <span id="totalSavingsBudget">$0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>TOTAL INVESTMENTS (Actual Saved)</span>
+                    <span id="totalSavingsValue">$0</span>
+                </div>
+            </div>
+
+            <div class="total-display" style="margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>TOTAL FAMILY SUPPORT (Budget)</span>
+                    <span id="totalFamilySupportBudget">$0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>TOTAL FAMILY SUPPORT (Actual Sent)</span>
+                    <span id="totalFamilySupportValue">$0</span>
+                </div>
+            </div>
+
+            <button style="width: 100%; margin-top: 15px; padding: 10px; background: rgba(239, 68, 68, 0.1); color: var(--danger-red); border: 1px solid var(--danger-red); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;" onclick="resetSavingsMonth()">🔄 Reset Savings for Month</button>
+        </div>
+
+        <!-- SUMMARY TAB (Default/Active) -->
+        <div id="summary" class="tab-content active">
+            <div class="section-title">📊 Monthly Financial Summary</div>
+
+            <div class="chart-container">
+                <div style="font-weight: 600; margin-bottom: 10px;">Expense Breakdown</div>
+                <svg id="pieChart" class="pie-chart-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
+                <div class="chart-legend" id="chartLegend"></div>
+            </div>
+
+            <div class="total-display">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>Total Income</span>
+                    <span id="summaryIncome">$12,050</span>
+                </div>
+            </div>
+
+            <div class="total-display">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>Fixed Expenses</span>
+                    <span id="summaryFixed">-$4,999</span>
+                </div>
+            </div>
+
+            <div class="total-display">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>Variable Expenses (This Month)</span>
+                    <span id="summaryVariable">-$0</span>
+                </div>
+            </div>
+
+            <div class="total-display">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>Investments (Wealth Building)</span>
+                    <span id="summarySavings">-$0</span>
+                </div>
+            </div>
+
+            <div class="total-display">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>Family Support (India)</span>
+                    <span id="summaryFamilySupport">-$0</span>
+                </div>
+            </div>
+
+            <div class="total-display positive" style="margin-top: 15px; font-size: 16px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>NET BALANCE</span>
+                    <span id="summaryBalance">$0</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; padding: 12px; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border-left: 3px solid var(--safe-green); font-size: 11px; line-height: 1.6;">
+                <strong>💡 Millionaire Path by 35:</strong><br>
+                At this pace of saving $4,600+/month, you'll accumulate $471k+ in liquid assets by age 35, plus home equity of $400k+. Target: $870k+ net worth. 🎯
+            </div>
+
+            <button style="width: 100%; margin-top: 15px; padding: 10px; background: rgba(239, 68, 68, 0.1); color: var(--danger-red); border: 1px solid var(--danger-red); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;" onclick="exportData()">📥 Export Budget Data</button>
+        </div>
+    </div>
+
+    <button class="add-expense-btn" onclick="openAddExpenseModal()">+</button>
+
+    <!-- ADD EXPENSE MODAL -->
+    <div class="modal" id="expenseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Expense</h2>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label>Category *</label>
+                <select id="categorySelect">
+                    <option value="">-- Select Category --</option>
+                    <option value="Misc">🛍️ Misc (Impulse/Amazon)</option>
+                    <option value="Outside Food">🍽️ Outside Food</option>
+                    <option value="Groceries">🥬 Groceries</option>
+                    <option value="Gas + Car Maint">⛽ Gas + Car Maint</option>
+                    <option value="Subscriptions">📱 Subscriptions</option>
+                    <option value="Travel">✈️ Travel</option>
+                    <option value="Business Expense">💼 Business Expense</option>
+                    <option value="Business Conference">🎤 Business Conference & Travel</option>
+                    <option value="Grooming & Misc">💇 Grooming & Misc</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Amount ($) *</label>
+                <input type="number" id="amountInput" placeholder="0.00" step="0.01" min="0">
+            </div>
+
+            <div class="form-group">
+                <label>Notes</label>
+                <input type="text" id="notesInput" placeholder="e.g., Amazon, Lunch with Jo">
+            </div>
+
+            <div class="form-group">
+                <label>Added By</label>
+                <select id="personSelect">
+                    <option value="Prithvi">👨 Prithvi</option>
+                    <option value="Jo">👩 Jo</option>
+                </select>
+            </div>
+
+            <button class="submit-btn" onclick="addExpense()">Add Expense</button>
+        </div>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editModalTitle">Edit Amount</h2>
+                <button class="close-btn" onclick="closeEditModal()">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label id="editModalLabel">Amount</label>
+                <input type="number" id="editAmountInput" placeholder="0.00" step="0.01" min="0">
+            </div>
+
+            <button class="submit-btn" onclick="saveEdit()">Save Changes</button>
+        </div>
+    </div>
+
+    <script>
+        // Data Configuration
+        const BUDGET_CONFIG = {
+            income: {
+                prithvi: 7000,
+                jo: 5000,
+                amway: 50
+            },
+            fixed: {
+                'Mortgage': 2540,
+                'Ditto (Amway)': 700,
+                'Condo Maintenance': 535,
+                'Utilities': 106,
+                'Insurance': 373,
+                'Phone Bill': 142,
+                'Car Lease': 603
+            },
+            variable: {
+                'Gas + Car Maint': 300,
+                'Outside Food': 200,
+                'Groceries': 300,
+                'Grooming & Misc': 300,
+                'Travel': 500,
+                'Subscriptions': 306,
+                'Business Expense': 250,
+                'Business Conference': 250,
+                'Misc': 300
+            },
+            savings: {
+                'RRSP (Jo)': 100,
+                'TFSA (Prithvi)': 3000,
+                'TFSA (Jo)': 100
+            },
+            familySupport: {
+                'India Savings': 800,
+                'Chitti Fund': 600
+            }
+        };
+
+        let currentEditType = null;
+        let currentEditKey = null;
+        let currentMonth = '2026-07'; // Start with July 2026
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeMonths();
+            loadData();
+            initializeFixedActuals();
+            initializeSavingsActuals();
+            renderFixed();
+            renderVariable();
+            renderSavings();
+            updateStats();
+        });
+
+        function initializeMonths() {
+            // Set current month from today
+            const today = new Date();
+            currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+            // Populate month selector with months from July 2026 onwards
+            const months = [];
+            let startDate = new Date(2026, 6); // July 2026
+            const endDate = new Date(today.getFullYear(), today.getMonth() + 3); // 3 months into future
+
+            while (startDate <= endDate) {
+                const year = startDate.getFullYear();
+                const month = String(startDate.getMonth() + 1).padStart(2, '0');
+                const monthKey = `${year}-${month}`;
+                const monthName = startDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+                months.push({ key: monthKey, name: monthName });
+                startDate.setMonth(startDate.getMonth() + 1);
+            }
+
+            const selector = document.getElementById('monthSelector');
+            selector.innerHTML = months.map(m =>
+                `<option value="${m.key}" ${m.key === currentMonth ? 'selected' : ''}>${m.name}</option>`
+            ).join('');
+
+            updateMonthDisplay();
+        }
+
+        function updateMonthDisplay() {
+            const date = new Date(`${currentMonth}-01`);
+            const monthName = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            document.getElementById('currentMonthDisplay').textContent = `Prithvi & Jo | ${monthName}`;
+
+            const selector = document.getElementById('monthSelector');
+            if (selector) selector.value = currentMonth;
+        }
+
+        function previousMonth() {
+            const date = new Date(`${currentMonth}-01`);
+            date.setMonth(date.getMonth() - 1);
+            currentMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            updateMonthDisplay();
+            updateStats();
+        }
+
+        function nextMonth() {
+            const date = new Date(`${currentMonth}-01`);
+            date.setMonth(date.getMonth() + 1);
+            currentMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            updateMonthDisplay();
+            updateStats();
+        }
+
+        function changeMonth() {
+            const selector = document.getElementById('monthSelector');
+            currentMonth = selector.value;
+            updateMonthDisplay();
+            updateStats();
+        }
+
+        function initializeFixedActuals() {
+            const actuals = JSON.parse(localStorage.getItem('fixedActuals') || '{}');
+            if (Object.keys(actuals).length === 0) {
+                // Initialize with budgeted amounts
+                Object.keys(BUDGET_CONFIG.fixed).forEach(key => {
+                    actuals[key] = 0;
+                });
+                localStorage.setItem('fixedActuals', JSON.stringify(actuals));
+            }
+        }
+
+        function getSavingsActuals() {
+            const key = `savingsActuals_${currentMonth}`;
+            return JSON.parse(localStorage.getItem(key) || '{}');
+        }
+
+        function initializeSavingsActuals() {
+            const key = `savingsActuals_${currentMonth}`;
+            const actuals = JSON.parse(localStorage.getItem(key) || '{}');
+            if (Object.keys(actuals).length === 0) {
+                // Initialize with 0
+                Object.keys(BUDGET_CONFIG.savings).forEach(name => {
+                    actuals[name] = 0;
+                });
+                localStorage.setItem(key, JSON.stringify(actuals));
+            }
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('budgetData');
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                BUDGET_CONFIG.income = { ...BUDGET_CONFIG.income, ...parsed.income };
+                BUDGET_CONFIG.fixed = { ...BUDGET_CONFIG.fixed, ...parsed.fixed };
+                BUDGET_CONFIG.variable = { ...BUDGET_CONFIG.variable, ...parsed.variable };
+                BUDGET_CONFIG.savings = { ...BUDGET_CONFIG.savings, ...parsed.savings };
+                BUDGET_CONFIG.familySupport = { ...BUDGET_CONFIG.familySupport, ...parsed.familySupport };
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('budgetData', JSON.stringify(BUDGET_CONFIG));
+            updateStats();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function getFixedActuals() {
+            return JSON.parse(localStorage.getItem('fixedActuals') || '{}');
+        }
+
+        function renderFixed() {
+            const container = document.getElementById('fixedExpensesContainer');
+            container.innerHTML = '';
+            const actuals = getFixedActuals();
+
+            Object.entries(BUDGET_CONFIG.fixed).forEach(([name, budget]) => {
+                const spent = actuals[name] || 0;
+                const remaining = budget - spent;
+                const percentUsed = (spent / budget) * 100;
+
+                let status = 'safe';
+                if (percentUsed >= 100) status = 'danger';
+                else if (percentUsed >= 90) status = 'warning';
+
+                const card = document.createElement('div');
+                card.className = `category-card ${status}`;
+
+                const statusText = remaining < 0 ? 'OVER' : (percentUsed >= 90 ? '⚠️' : '✅');
+
+                card.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-name">${name} <span class="status-badge status-${status}">${statusText}</span></div>
+                    </div>
+                    <div class="budget-bar">
+                        <div class="budget-fill ${status}" style="width: ${Math.min(percentUsed, 100)}%"></div>
+                    </div>
+                    <div class="budget-text">
+                        <span>${formatCurrency(spent)} / ${formatCurrency(budget)}</span>
+                        <span>${remaining >= 0 ? `💚 ${formatCurrency(remaining)}` : `❌ -${formatCurrency(Math.abs(remaining))}`}</span>
+                    </div>
+                    <button style="width: 100%; margin-top: 8px; padding: 6px; background: var(--purple-primary); border: none; color: white; border-radius: 4px; font-size: 11px; cursor: pointer;" onclick="editFixedActual('${name}')">Update Spent Amount</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderVariable() {
+            const container = document.getElementById('variableCategoriesContainer');
+            container.innerHTML = '';
+            const data = getMonthlySpending();
+
+            Object.entries(BUDGET_CONFIG.variable).forEach(([category, budget]) => {
+                const spent = data[category] || 0;
+                const remaining = budget - spent;
+                const percentUsed = (spent / budget) * 100;
+
+                let status = 'safe';
+                if (percentUsed >= 100) status = 'danger';
+                else if (percentUsed >= 75) status = 'warning';
+
+                const card = document.createElement('div');
+                card.className = `category-card ${status}`;
+
+                const statusText = remaining < 0 ? 'OVER' : (percentUsed >= 75 ? '⚠️' : '✅');
+
+                card.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-name">${category} <span class="status-badge status-${status}">${statusText}</span></div>
+                    </div>
+                    <div class="budget-bar">
+                        <div class="budget-fill ${status}" style="width: ${Math.min(percentUsed, 100)}%"></div>
+                    </div>
+                    <div class="budget-text">
+                        <span>${formatCurrency(spent)} / ${formatCurrency(budget)}</span>
+                        <span>${remaining >= 0 ? `💚 ${formatCurrency(remaining)}` : `❌ -${formatCurrency(Math.abs(remaining))}`}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderSavings() {
+            const container = document.getElementById('savingsContainer');
+            container.innerHTML = '';
+            const actuals = getSavingsActuals();
+
+            // Investments Section
+            const invHeader = document.createElement('div');
+            invHeader.style.cssText = 'font-size: 12px; font-weight: 600; color: var(--text-secondary); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px;';
+            invHeader.textContent = '💰 Investments (Track Actual vs Budget)';
+            container.appendChild(invHeader);
+
+            Object.entries(BUDGET_CONFIG.savings).forEach(([name, budget]) => {
+                const saved = actuals[name] || 0;
+                const remaining = budget - saved;
+                const percentUsed = (saved / budget) * 100;
+
+                let status = 'safe';
+                if (percentUsed >= 100) status = 'danger';
+                else if (percentUsed >= 75) status = 'warning';
+
+                const card = document.createElement('div');
+                card.className = `category-card ${status}`;
+
+                const statusText = saved === 0 ? '⏳' : (percentUsed >= 100 ? '✅' : `${Math.round(percentUsed)}%`);
+
+                card.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-name">${name} <span class="status-badge status-${status}">${statusText}</span></div>
+                    </div>
+                    <div class="budget-bar">
+                        <div class="budget-fill ${status}" style="width: ${Math.min(percentUsed, 100)}%"></div>
+                    </div>
+                    <div class="budget-text">
+                        <span>${formatCurrency(saved)} / ${formatCurrency(budget)}</span>
+                        <span>${remaining >= 0 ? `💚 ${formatCurrency(remaining)}` : `✅ Over: ${formatCurrency(Math.abs(remaining))}`}</span>
+                    </div>
+                    <button style="width: 100%; margin-top: 8px; padding: 6px; background: var(--purple-primary); border: none; color: white; border-radius: 4px; font-size: 11px; cursor: pointer;" onclick="editSavingsActual('${name}')">Update Amount Saved</button>
+                `;
+                container.appendChild(card);
+            });
+
+            // Family Support Section
+            const familyHeader = document.createElement('div');
+            familyHeader.style.cssText = 'font-size: 12px; font-weight: 600; color: var(--text-secondary); margin: 20px 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px;';
+            familyHeader.textContent = '❤️ Family Support (Track Actual vs Budget)';
+            container.appendChild(familyHeader);
+
+            Object.entries(BUDGET_CONFIG.familySupport).forEach(([name, budget]) => {
+                const sent = actuals[name] || 0;
+                const remaining = budget - sent;
+                const percentUsed = (sent / budget) * 100;
+
+                let status = 'safe';
+                if (percentUsed >= 100) status = 'danger';
+                else if (percentUsed >= 75) status = 'warning';
+
+                const card = document.createElement('div');
+                card.className = `category-card ${status}`;
+
+                const statusText = sent === 0 ? '⏳' : (percentUsed >= 100 ? '✅' : `${Math.round(percentUsed)}%`);
+
+                card.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-name">${name} <span class="status-badge status-${status}">${statusText}</span></div>
+                    </div>
+                    <div class="budget-bar">
+                        <div class="budget-fill ${status}" style="width: ${Math.min(percentUsed, 100)}%"></div>
+                    </div>
+                    <div class="budget-text">
+                        <span>${formatCurrency(sent)} / ${formatCurrency(budget)}</span>
+                        <span>${remaining >= 0 ? `💚 ${formatCurrency(remaining)}` : `✅ Over: ${formatCurrency(Math.abs(remaining))}`}</span>
+                    </div>
+                    <button style="width: 100%; margin-top: 8px; padding: 6px; background: var(--purple-primary); border: none; color: white; border-radius: 4px; font-size: 11px; cursor: pointer;" onclick="editFamilySupportActual('${name}')">Update Amount Sent</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function getMonthlySpending() {
+            const expenses = JSON.parse(localStorage.getItem('monthlyExpenses') || '{}');
+            const data = {};
+
+            Object.keys(BUDGET_CONFIG.variable).forEach(cat => {
+                data[cat] = 0;
+            });
+
+            Object.entries(expenses).forEach(([dateStr, items]) => {
+                if (dateStr.startsWith(currentMonth)) {
+                    items.forEach(expense => {
+                        if (data.hasOwnProperty(expense.category)) {
+                            data[expense.category] += expense.amount;
+                        }
+                    });
+                }
+            });
+
+            return data;
+        }
+
+        function formatCurrency(num) {
+            return '$' + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function updateStats() {
+            // Income
+            const totalIncome = Object.values(BUDGET_CONFIG.income).reduce((a, b) => a + b, 0);
+            document.getElementById('totalIncomeValue').textContent = formatCurrency(totalIncome);
+            document.getElementById('totalIncomeDisplay').textContent = formatCurrency(totalIncome);
+            document.getElementById('summaryIncome').textContent = formatCurrency(totalIncome);
+
+            // Fixed - use actual spending
+            const actuals = getFixedActuals();
+            const totalFixed = Object.values(actuals).reduce((a, b) => a + b, 0);
+            document.getElementById('totalFixedValue').textContent = formatCurrency(totalFixed);
+            document.getElementById('summaryFixed').textContent = '-' + formatCurrency(totalFixed);
+
+            // Variable
+            const spending = getMonthlySpending();
+            const totalVariable = Object.values(spending).reduce((a, b) => a + b, 0);
+            document.getElementById('totalVariableValue').textContent = formatCurrency(totalVariable);
+            document.getElementById('summaryVariable').textContent = '-' + formatCurrency(totalVariable);
+
+            // Savings (Investments)
+            const totalSavingsBudget = Object.values(BUDGET_CONFIG.savings).reduce((a, b) => a + b, 0);
+            const savingsActuals = getSavingsActuals();
+            const totalSavingsActual = Object.entries(BUDGET_CONFIG.savings).reduce((sum, [name]) => {
+                return sum + (savingsActuals[name] || 0);
+            }, 0);
+            document.getElementById('totalSavingsBudget').textContent = formatCurrency(totalSavingsBudget);
+            document.getElementById('totalSavingsValue').textContent = formatCurrency(totalSavingsActual);
+            document.getElementById('summarySavings').textContent = '-' + formatCurrency(totalSavingsActual);
+
+            // Family Support
+            const totalFamilySupportBudget = Object.values(BUDGET_CONFIG.familySupport).reduce((a, b) => a + b, 0);
+            const totalFamilySupportActual = Object.entries(BUDGET_CONFIG.familySupport).reduce((sum, [name]) => {
+                return sum + (savingsActuals[name] || 0);
+            }, 0);
+            document.getElementById('totalFamilySupportBudget').textContent = formatCurrency(totalFamilySupportBudget);
+            document.getElementById('totalFamilySupportValue').textContent = formatCurrency(totalFamilySupportActual);
+
+            // Total Expenses
+            const totalExpenses = totalFixed + totalVariable + totalSavings + totalFamilySupport;
+            document.getElementById('totalExpensesDisplay').textContent = formatCurrency(totalExpenses);
+
+            // Summary display for family support
+            document.getElementById('summaryFamilySupport').textContent = '-' + formatCurrency(totalFamilySupport);
+
+            // Available
+            const available = totalIncome - totalExpenses;
+            const savingsDisplay = document.getElementById('savingsDisplay');
+            savingsDisplay.innerHTML = `
+                <div class="summary-label">Available</div>
+                <div class="summary-value" style="color: ${available >= 0 ? 'var(--safe-green)' : 'var(--danger-red)'}">${available >= 0 ? '+' : '-'}${formatCurrency(Math.abs(available))}</div>
+            `;
+
+            // Balance
+            document.getElementById('summaryBalance').textContent = available >= 0 ? '+' + formatCurrency(available) : '-' + formatCurrency(Math.abs(available));
+            document.getElementById('summaryBalance').style.color = available >= 0 ? 'var(--safe-green)' : 'var(--danger-red)';
+
+            // Update pie chart
+            drawPieChart();
+        }
+
+        function openAddExpenseModal() {
+            document.getElementById('expenseModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('expenseModal').classList.remove('active');
+            document.getElementById('categorySelect').value = '';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('notesInput').value = '';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+            currentEditType = null;
+            currentEditKey = null;
+        }
+
+        function addExpense() {
+            const category = document.getElementById('categorySelect').value;
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const notes = document.getElementById('notesInput').value;
+            const person = document.getElementById('personSelect').value;
+
+            if (!category || !amount || amount <= 0) {
+                alert('Please fill required fields');
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            let expenses = JSON.parse(localStorage.getItem('monthlyExpenses') || '{}');
+
+            if (!expenses[today]) {
+                expenses[today] = [];
+            }
+
+            expenses[today].push({
+                category,
+                amount,
+                notes,
+                person,
+                timestamp: new Date().toISOString()
+            });
+
+            localStorage.setItem('monthlyExpenses', JSON.stringify(expenses));
+
+            closeModal();
+            renderVariable();
+            updateStats();
+            loadRecentExpenses();
+        }
+
+        function editIncome(type) {
+            currentEditType = 'income';
+            currentEditKey = type;
+            document.getElementById('editModalTitle').textContent = 'Edit Income';
+            document.getElementById('editModalLabel').textContent = type.charAt(0).toUpperCase() + type.slice(1) + ' Income';
+            document.getElementById('editAmountInput').value = BUDGET_CONFIG.income[type];
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function editFixed(name) {
+            currentEditType = 'fixed';
+            currentEditKey = name;
+            document.getElementById('editModalTitle').textContent = 'Edit ' + name;
+            document.getElementById('editModalLabel').textContent = name;
+            document.getElementById('editAmountInput').value = BUDGET_CONFIG.fixed[name];
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function editSavings(name) {
+            currentEditType = 'savings';
+            currentEditKey = name;
+            document.getElementById('editModalTitle').textContent = 'Edit ' + name;
+            document.getElementById('editModalLabel').textContent = name;
+            document.getElementById('editAmountInput').value = BUDGET_CONFIG.savings[name];
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function editFamilySupport(name) {
+            currentEditType = 'familySupport';
+            currentEditKey = name;
+            document.getElementById('editModalTitle').textContent = 'Edit ' + name;
+            document.getElementById('editModalLabel').textContent = name;
+            document.getElementById('editAmountInput').value = BUDGET_CONFIG.familySupport[name];
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function editSavingsActual(name) {
+            currentEditType = 'savingsActual';
+            currentEditKey = name;
+            const actuals = getSavingsActuals();
+            document.getElementById('editModalTitle').textContent = 'Actual Saved - ' + name;
+            document.getElementById('editModalLabel').textContent = 'Amount Saved This Month (Budgeted: ' + formatCurrency(BUDGET_CONFIG.savings[name]) + ')';
+            document.getElementById('editAmountInput').value = actuals[name] || 0;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function editFamilySupportActual(name) {
+            currentEditType = 'familySupportActual';
+            currentEditKey = name;
+            const actuals = getSavingsActuals();
+            document.getElementById('editModalTitle').textContent = 'Amount Sent - ' + name;
+            document.getElementById('editModalLabel').textContent = 'Amount Sent This Month (Budgeted: ' + formatCurrency(BUDGET_CONFIG.familySupport[name]) + ')';
+            document.getElementById('editAmountInput').value = actuals[name] || 0;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function editFixedActual(name) {
+            currentEditType = 'fixedActual';
+            currentEditKey = name;
+            const actuals = getFixedActuals();
+            document.getElementById('editModalTitle').textContent = 'Actual Spent - ' + name;
+            document.getElementById('editModalLabel').textContent = 'Amount Spent (Budgeted: ' + formatCurrency(BUDGET_CONFIG.fixed[name]) + ')';
+            document.getElementById('editAmountInput').value = actuals[name] || 0;
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function saveEdit() {
+            const newAmount = parseFloat(document.getElementById('editAmountInput').value);
+
+            if (newAmount < 0 || isNaN(newAmount)) {
+                alert('Please enter valid amount');
+                return;
+            }
+
+            if (currentEditType === 'fixedActual') {
+                const actuals = getFixedActuals();
+                actuals[currentEditKey] = newAmount;
+                localStorage.setItem('fixedActuals', JSON.stringify(actuals));
+            } else if (currentEditType === 'savingsActual' || currentEditType === 'familySupportActual') {
+                const key = `savingsActuals_${currentMonth}`;
+                const actuals = JSON.parse(localStorage.getItem(key) || '{}');
+                actuals[currentEditKey] = newAmount;
+                localStorage.setItem(key, JSON.stringify(actuals));
+            } else {
+                BUDGET_CONFIG[currentEditType][currentEditKey] = newAmount;
+                saveData();
+            }
+
+            if (currentEditType === 'income') renderVariable();
+            else if (currentEditType === 'fixed') renderFixed();
+            else if (currentEditType === 'savings' || currentEditType === 'familySupport') renderSavings();
+            else if (currentEditType === 'fixedActual') renderFixed();
+            else if (currentEditType === 'savingsActual' || currentEditType === 'familySupportActual') renderSavings();
+
+            closeEditModal();
+            renderVariable();
+            renderFixed();
+            renderSavings();
+            updateStats();
+        }
+
+        function loadRecentExpenses() {
+            const expenses = JSON.parse(localStorage.getItem('monthlyExpenses') || '{}');
+            const allExpenses = [];
+
+            Object.entries(expenses).forEach(([date, items]) => {
+                items.forEach(exp => {
+                    allExpenses.push({ ...exp, date });
+                });
+            });
+
+            const recent = allExpenses.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 15);
+            const container = document.getElementById('recentExpensesList');
+
+            if (recent.length === 0) {
+                container.innerHTML = '<span>No expenses logged yet</span>';
+                return;
+            }
+
+            container.innerHTML = recent.map(exp => `
+                <div class="expense-log-item">
+                    <div>
+                        <strong>${exp.category}</strong> (${exp.person})
+                        <br><span style="opacity: 0.7;">${new Date(exp.date).toLocaleDateString()} ${exp.notes ? '• ' + exp.notes : ''}</span>
+                    </div>
+                    <div style="font-weight: 600; color: var(--danger-red);">-${formatCurrency(exp.amount)}</div>
+                </div>
+            `).join('');
+        }
+
+        function syncData() {
+            const data = {
+                income: BUDGET_CONFIG.income,
+                fixed: BUDGET_CONFIG.fixed,
+                variable: BUDGET_CONFIG.variable,
+                savings: BUDGET_CONFIG.savings,
+                expenses: JSON.parse(localStorage.getItem('monthlyExpenses') || '{}')
+            };
+
+            const json = JSON.stringify(data);
+            const encoded = btoa(json);
+
+            alert(`📤 SYNC LINK CREATED!\n\nShare this link with your partner:\n\nbudget-sync://${encoded}\n\nOr copy the code above and paste into their phone's browser.`);
+        }
+
+        function resetFixedExpenses() {
+            if (confirm('⚠️ Reset all fixed expenses to $0 for a new month?')) {
+                const actuals = {};
+                Object.keys(BUDGET_CONFIG.fixed).forEach(key => {
+                    actuals[key] = 0;
+                });
+                localStorage.setItem('fixedActuals', JSON.stringify(actuals));
+                renderFixed();
+                updateStats();
+                alert('✅ Fixed expenses reset!');
+            }
+        }
+
+        function resetSavingsMonth() {
+            if (confirm(`⚠️ Reset all savings for ${currentMonth} to $0?`)) {
+                const key = `savingsActuals_${currentMonth}`;
+                const actuals = {};
+                Object.keys(BUDGET_CONFIG.savings).forEach(name => {
+                    actuals[name] = 0;
+                });
+                Object.keys(BUDGET_CONFIG.familySupport).forEach(name => {
+                    actuals[name] = 0;
+                });
+                localStorage.setItem(key, JSON.stringify(actuals));
+                renderSavings();
+                updateStats();
+                alert('✅ Savings reset for this month!');
+            }
+        }
+
+        function drawPieChart() {
+            const actuals = getFixedActuals();
+            const spending = getMonthlySpending();
+
+            // All categories with colors
+            const colors = {
+                // Fixed
+                'Mortgage': '#667eea',
+                'Ditto (Amway)': '#764ba2',
+                'Condo Maintenance': '#8b5cf6',
+                'Utilities': '#a78bfa',
+                'Insurance': '#c4b5fd',
+                'Phone Bill': '#ddd6fe',
+                'Car Lease': '#ede9fe',
+                // Variable
+                'Gas + Car Maint': '#ec4899',
+                'Outside Food': '#f472b6',
+                'Groceries': '#f9a8d4',
+                'Grooming & Misc': '#fbcfe8',
+                'Travel': '#f97316',
+                'Subscriptions': '#fb923c',
+                'Business Expense': '#fdba74',
+                'Business Conference': '#fed7aa',
+                'Misc': '#fef3c7',
+                // Investments
+                'RRSP (Jo)': '#10b981',
+                'TFSA (Prithvi)': '#6ee7b7',
+                'TFSA (Jo)': '#a7f3d0',
+                // Family
+                'India Savings': '#f59e0b',
+                'Chitti Fund': '#fbbf24'
+            };
+
+            // Build data array with all categories
+            const data = [];
+
+            // Fixed expenses
+            Object.entries(BUDGET_CONFIG.fixed).forEach(([name, budget]) => {
+                const actual = actuals[name] || 0;
+                if (actual > 0) {
+                    data.push({
+                        label: name,
+                        value: actual,
+                        color: colors[name] || '#6b7280',
+                        category: 'Fixed'
+                    });
+                }
+            });
+
+            // Variable expenses
+            Object.entries(spending).forEach(([name, value]) => {
+                if (value > 0) {
+                    data.push({
+                        label: name,
+                        value: value,
+                        color: colors[name] || '#6b7280',
+                        category: 'Variable'
+                    });
+                }
+            });
+
+            // Investments
+            Object.entries(BUDGET_CONFIG.savings).forEach(([name, value]) => {
+                if (value > 0) {
+                    data.push({
+                        label: name,
+                        value: value,
+                        color: colors[name] || '#10b981',
+                        category: 'Investment'
+                    });
+                }
+            });
+
+            // Family Support
+            Object.entries(BUDGET_CONFIG.familySupport).forEach(([name, value]) => {
+                if (value > 0) {
+                    data.push({
+                        label: name,
+                        value: value,
+                        color: colors[name] || '#f59e0b',
+                        category: 'Family'
+                    });
+                }
+            });
+
+            const total = data.reduce((sum, d) => sum + d.value, 0);
+
+            if (total === 0) {
+                document.getElementById('pieChart').innerHTML = '<text x="100" y="100" text-anchor="middle" fill="var(--text-secondary)" font-size="12">No data yet</text>';
+                document.getElementById('chartLegend').innerHTML = '';
+                return;
+            }
+
+            // Calculate percentages and sort by value
+            const dataWithPercent = filteredData
+                .map(d => ({
+                    ...d,
+                    percent: (d.value / total) * 100,
+                    angle: (d.value / total) * 360
+                }))
+                .sort((a, b) => b.value - a.value);
+
+            // Draw pie chart
+            const svg = document.getElementById('pieChart');
+            svg.innerHTML = '';
+
+            const cx = 100, cy = 100, r = 80;
+            let currentAngle = -90;
+
+            dataWithPercent.forEach(segment => {
+                const startAngle = currentAngle;
+                const endAngle = currentAngle + segment.angle;
+
+                const startRad = (startAngle * Math.PI) / 180;
+                const endRad = (endAngle * Math.PI) / 180;
+
+                const x1 = cx + r * Math.cos(startRad);
+                const y1 = cy + r * Math.sin(startRad);
+                const x2 = cx + r * Math.cos(endRad);
+                const y2 = cy + r * Math.sin(endRad);
+
+                const largeArc = segment.angle > 180 ? 1 : 0;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                path.setAttribute('d', d);
+                path.setAttribute('fill', segment.color);
+                path.setAttribute('stroke', '#1f2937');
+                path.setAttribute('stroke-width', '2');
+                path.style.cursor = 'pointer';
+
+                svg.appendChild(path);
+
+                currentAngle = endAngle;
+            });
+
+            // Draw legend - organized by category
+            const legend = document.getElementById('chartLegend');
+            const grouped = {};
+            dataWithPercent.forEach(d => {
+                if (!grouped[d.category]) grouped[d.category] = [];
+                grouped[d.category].push(d);
+            });
+
+            let legendHtml = '';
+            Object.entries(grouped).forEach(([category, items]) => {
+                legendHtml += `<div style="grid-column: 1/-1; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-top: 8px; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.1);">${category}</div>`;
+                items.forEach(d => {
+                    legendHtml += `
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: ${d.color}"></div>
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 2px; font-size: 11px;">${d.label}</div>
+                                <div style="opacity: 0.7; font-size: 10px;">${d.percent.toFixed(1)}% • ${formatCurrency(d.value)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+            legend.innerHTML = legendHtml;
+        }
+
+        function exportData() {
+            const data = {
+                generated: new Date().toISOString(),
+                income: BUDGET_CONFIG.income,
+                fixed: BUDGET_CONFIG.fixed,
+                fixedActuals: getFixedActuals(),
+                variable: BUDGET_CONFIG.variable,
+                savings: BUDGET_CONFIG.savings,
+                spending: getMonthlySpending()
+            };
+
+            const csv = 'BUDGET SUMMARY - ' + new Date().toLocaleDateString() + '\n\n';
+            const json = JSON.stringify(data, null, 2);
+
+            const link = document.createElement('a');
+            link.href = 'data:text/plain,' + encodeURIComponent(json);
+            link.download = `budget_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+
+            alert('✅ Budget data exported!');
+        }
+    </script>
+</body>
+</html>
